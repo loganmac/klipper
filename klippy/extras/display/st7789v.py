@@ -93,10 +93,10 @@ class DisplayBase:
     def offset_to_x_y(self, offset):
         return offset % ST7789V_COLS, offset // ST7789V_COLS
     def ui_c_r_to_x_y(self, c, r):
-        return (self.ui_top_left[0] + c * ST7789V_FONT_WIDTH,
-                self.ui_top_left[1] + r * ST7789V_FONT_HEIGHT)
+        return (int(self.ui_top_left[0] + c * ST7789V_FONT_WIDTH),
+                int(self.ui_top_left[1] + r * ST7789V_FONT_HEIGHT))
     def _rowmajor_bitmap_to_image(self, b, width=8):
-        return Image.frombytes('1', (width, len(b) / (width / 8)), b)
+        return Image.frombytes('1', (int(width), int(len(b) / (width / 8))), b)
     def rgb_to_565(self, rgb):
         r = rgb[0] >> 3 & 0x1f
         g = rgb[1] >> 2 & 0x3f
@@ -166,7 +166,7 @@ class DisplayBase:
                 # Convert the image to an array of bytes.
                 data = numpy.fromstring(strip.tobytes(), dtype=numpy.uint8)
                 # Convert from RGB888 (24-bit) to RGB565 (16-bit).
-                data565 = numpy.zeros((data.shape[0] / 3,), dtype=numpy.uint16)
+                data565 = numpy.zeros((int(data.shape[0] / 3),), dtype=numpy.uint16)
                 data565[:] += \
                     ((data[0::3] >> 3) & 0x1f).astype(numpy.uint16) << 11
                 data565[:] += \
@@ -176,7 +176,7 @@ class DisplayBase:
                 # Convert to big endian format if needed.
                 if sys.byteorder == 'little':
                     data565[:] = (data565[:] >> 8) + ((data565[:] & 0xff) << 8)
-                out = map(ord, data565.tobytes())
+                out = data565.tobytes()
 
                 # Set the write window, then send the actual data.
                 self.cmd_raset(row, row + strip_height - 1)
@@ -226,7 +226,7 @@ class DisplayBase:
         if x + len(data) > width:
             data = data[:width - min(x, width)]
         for i, char in enumerate(data):
-            self.vram.paste(self.font[ord(char)], self.ui_c_r_to_x_y(x + i, y))
+            self.vram.paste(self.font[char], self.ui_c_r_to_x_y(x + i, y))
         self._invalidate(
             self.ui_c_r_to_x_y(x, y),
             (len(data) * ST7789V_FONT_WIDTH, ST7789V_FONT_HEIGHT))
@@ -278,7 +278,7 @@ class DisplayBase:
             self.logo = logo.make_logo(logo_width)
         x_pos = (ST7789V_COLS - logo_width) / 2
         y_pos = 0
-        self.vram.paste(self.logo, box=(x_pos, y_pos), mask=self.logo)
+        self.vram.paste(self.logo, box=(int(x_pos), int(y_pos)), mask=self.logo)
         self._invalidate((x_pos, y_pos), self.logo.size)
         return x_pos, y_pos, x_pos + self.logo.width, y_pos + self.logo.height
 
@@ -325,7 +325,7 @@ class ST7789V(DisplayBase):
             self.spi.spi_send(data, reqclock=BACKGROUND_PRIORITY_CLOCK)
         self.set_cs(old_cs)
     def write_data(self, data):
-        if data is None or len(data) == 0:
+        if data is None:
             return
         old_cs = self.cs_pin_state
         self.set_cs(0)
@@ -334,6 +334,7 @@ class ST7789V(DisplayBase):
         # a 3 byte command prefix, a 3 byte header, and a 2 byte trailer.
         # 56 + 3 + 3 + 2 = 64 bytes. The MCU's USB code accepts only up to 64.
         max_length = 56
+
         while len(data) > 0:
             datapart = data[:max_length]
             self.spi.spi_send(datapart, reqclock=BACKGROUND_PRIORITY_CLOCK)
