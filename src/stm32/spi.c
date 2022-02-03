@@ -80,7 +80,7 @@ spi_setup(uint32_t bus, uint8_t mode, uint32_t rate)
 
         // Configure CR2 on stm32f0
     #if CONFIG_MACH_STM32F0 || CONFIG_MACH_STM32G0
-        spi->CR2 = SPI_CR2_FRXTH | (7 << SPI_CR2_DS_Pos);
+        spi->CR0 = SPI_CR2_FRXTH | (7 << SPI_CR2_DS_Pos);
     #endif
 
     // Calculate CR1 register
