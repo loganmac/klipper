@@ -1,10 +1,4 @@
-// Code to setup clocks on stm32f2/stm32f4
-//
-// Copyright (C) 2019-2021  Kevin O'Connor <kevin@koconnor.net>
-//
-// This file may be distributed under the terms of the GNU GPLv3 license.
-
-#include "autoconf.h" // CONFIG_CLOCK_REF_FREQ
+lude "autoconf.h" // CONFIG_CLOCK_REF_FREQ
 #include "board/armcm_boot.h" // VectorTable
 #include "board/irq.h" // irq_disable
 #include "board/usb_cdc.h" // usb_request_bootloader
@@ -54,6 +48,8 @@ gpio_clock_enable(GPIO_TypeDef *regs)
     uint32_t rcc_pos = ((uint32_t)regs - AHB1PERIPH_BASE) / 0x400;
     RCC->AHB1ENR |= 1 << rcc_pos;
     RCC->AHB1ENR;
+    RCC->APB1RSTR |= (1<<rcc_pos);
+    RCC->APB1RSTR &= ~(1<<rcc_pos);
 }
 
 #if !CONFIG_STM32_CLOCK_REF_INTERNAL
